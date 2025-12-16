@@ -38,19 +38,18 @@ You can get help with `-h` flag:
 ```bash
 $ iso2unix -h
 iso2unix [-h] [-v] iso
-Convert ISO 8601 dates to UNIX timestamp:
--h     To print this help
--v     To print version
-iso    ISO 8601 date to convert
-```
-
-```bash
-$ iso2unix -h
-iso2unix [-h] [-v] iso
 Convert ISO 8601 date to UNIX timestamp:
 -h     To print this help
 -v     To print version
 iso    ISO 8601 date to convert
+Accepted ISO formats:
+- 2006-01-02T15:04:05MST
+- 2006-01-02T15:04:05Z
+- 2006-01-02 15:04:05 MST
+- 2006-01-02 15:04:05 Z
+- 2006-01-02T15:04:05
+- 2006-01-02 15:04:05
+If no timezone is provided, local timezone is assumed
 ```
 
 And version with `-v` flag:

@@ -17,17 +17,35 @@ const (
 Convert ISO 8601 date to UNIX timestamp:
 -h     To print this help
 -v     To print version
-iso    ISO 8601 date to convert`
-	// Time format in ISO 8601 format
-	IsoFormat = "2006-01-02T15:04:05Z"
-	// Time format in human readable format
-	HumanFormat = "2006-01-02 15:04:05 UTC"
+iso    ISO 8601 date to convert
+Accepted ISO formats:
+- 2006-01-02T15:04:05MST
+- 2006-01-02T15:04:05Z
+- 2006-01-02 15:04:05 MST
+- 2006-01-02 15:04:05 Z
+- 2006-01-02T15:04:05
+- 2006-01-02 15:04:05
+If no timezone is provided, local timezone is assumed`
+)
+
+var (
+	// TimeFormats defines the accepted ISO time formats with timezone
+	TimeFormats = []string{
+		"2006-01-02T15:04:05MST",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02 15:04:05 MST",
+		"2006-01-02 15:04:05 Z",
+	}
+	// TimeFormatsNoTimeZone defines the accepted ISO time formats without timezone
+	TimeFormatsNoTimeZone = []string{
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+	}
 )
 
 func main() {
 	help := flag.Bool("h", false, "Print help")
 	version := flag.Bool("v", false, "Print version")
-	human := flag.Bool("r", false, "Print human readable format")
 	flag.Parse()
 	if *help {
 		fmt.Println(Help)
@@ -37,34 +55,32 @@ func main() {
 		fmt.Println(Version)
 		os.Exit(0)
 	}
-	if flag.NArg() != 1 {
+	if flag.NArg() < 1 {
 		fmt.Println("ERROR missing ISO timestamp argument")
 		fmt.Println(Help)
 		os.Exit(1)
 	}
-	unix, err := Iso2Unix(flag.Arg(0), *human)
+	iso := strings.TrimSpace(strings.Join(flag.Args(), " "))
+	unix, err := Iso2Unix(iso)
 	if err != nil {
-		fmt.Printf("ERROR invalid ISO timestamp: %v\n", err)
-		fmt.Println(Help)
+		fmt.Printf("ERROR '%s' is an invalid ISO timestamp\n", iso)
 		os.Exit(1)
 	}
 	fmt.Println(unix)
 }
 
-func Iso2Unix(iso string, human bool) (int64, error) {
-	iso = strings.TrimSpace(iso)
-	var t time.Time
-	var err error
-	if human {
-		t, err = time.Parse(HumanFormat, iso)
-		if err != nil {
-			return 0, fmt.Errorf("cannot parse human readable time: %v", err)
-		}
-	} else {
-		t, err = time.Parse(IsoFormat, iso)
-		if err != nil {
-			return 0, fmt.Errorf("cannot parse ISO time: %v", err)
+func Iso2Unix(iso string) (int64, error) {
+	for _, format := range TimeFormats {
+		timestamp, err := time.Parse(format, iso)
+		if err == nil {
+			return timestamp.Unix(), nil
 		}
 	}
-	return t.Unix(), nil
+	for _, format := range TimeFormatsNoTimeZone {
+		timestamp, err := time.ParseInLocation(format, iso, time.Local)
+		if err == nil {
+			return timestamp.Unix(), nil
+		}
+	}
+	return 0, fmt.Errorf("could not parse ISO timestamp")
 }
